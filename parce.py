@@ -28,84 +28,33 @@ el_password.send_keys(password)
 btn_login = driver.find_element(By.CLASS_NAME, 'btn-login')
 btn_login.click()
 
-'''Функция ищет на странице нужную информацию и записывает ее в базу'''
+'''Функция ищет на странице нужную информацию и записывает ее в базу. Получает экземпляр страницы и тип ЗНО (0 - 
+необработанная, 1 - в работе, 2 - закрыта.'''
 def get_data(driver, type_zno):
     el_contract = driver.find_elements(By.CLASS_NAME, 'b-contract-number')
+    el_sla_date_div = driver.find_elements(By.XPATH, '//div[text()="Срок SLA:"]')
+    el_sla_date_b = driver.find_elements(By.XPATH, '//b[text()="Срок SLA:"]')
 
-    el_sla_date = driver.find_elements(By.XPATH, '//div[text()="Срок SLA:"]')
-    print(el_sla_date[0].text[19:])
-    print(el_contract[0].text)
-
-
-
-
-'''Получаем и добавляем в базу необработанные ЗНО'''
-driver.get('https://sd.atm72.ru/?filtr_department_atm_id=67680525&filtr_wf_current_contract=-1')
-
-
-'''Получаем и добавляем в базу назначеные ЗНО'''
-driver.get('https://sd.atm72.ru/?state=in_progress&filtr_notModernization=true')
-get_data(driver)
-
-'''Получаем и добавляем в базу закрытые ЗНО'''
-#driver.get('https://sd.atm72.ru/?state=closed&filtr_notModernization=false')
-#el_start_date = driver.find_element(By.XPATH, '//input[@cid="date_from"]')
-#el_start_date.send_keys(datetime.date.today().strftime('%d.%m.%Y'))
-#sleep(30)
-
-
-
-
-
-
-
-
-
-
-
-
-""""
-    if i == 96:
-        el_number = driver.find_elements(By.CLASS_NAME, f'table-external-id-{i}')
-        el_created_date = driver.find_elements(By.XPATH, '//div[text()="Передана инженеру:"]')
-    elif i == 209:
-        el_number = driver.find_elements(By.CLASS_NAME, f'table-external-id-{i}')
-        el_created_date = driver.find_elements(By.XPATH, '//div[text()="Получена:"]')
-    elif i == 184:
-        el_number = driver.find_elements(By.CLASS_NAME, f'table-external-id-{i}')
-        el_created_date = driver.find_elements(By.XPATH, '//div[text()="Получена:"]')
-    elif i == 217:
-        el_number = driver.find_elements(By.CLASS_NAME, f'table-external-id-{i}')
-        el_created_date = driver.find_elements(By.XPATH, '//div[text()="Получена:"]')
-    elif i == 201:              
-        el_number = driver.find_elements(By.CLASS_NAME, f'table-external-id-{i}')
-        el_created_date = driver.find_elements(By.XPATH, '//div[text()="Получена:"]')
-    elif i == 118:
-        el_number = driver.find_elements(By.CLASS_NAME, f'table-external-id-{i}')
-        el_created_date = driver.find_elements(By.XPATH, '//div[text()="Получена:"]')
-
-    el_sla_date = driver.find_elements(By.XPATH, '//div[text()="Срок SLA:"]')
-
-
-    for j in range(len(el_created_date)):
-        if el_number[j].text:
-            x = el_number[j].text
+    el_sla_date = []
+    i_sla_date_div, i_sla_date_b = 0, 0
+    for i in range(len(el_contract)):
+        if el_contract[i].text == 'АТМ Nautilus Сбербанк':
+            el_sla_date.append(el_sla_date_div[i_sla_date_div])
+            i_sla_date_div += 1
         else:
-            y = 'NO'
-        try:
-            y = el_sla_date[j].text[10:]
-        except Exception:
-            y = 'NO'
-        if i == 96:
-            z = el_created_date[j].text[16:]
-        else:
-            z = el_created_date[j].text[10:]
+            el_sla_date.append(el_sla_date_b[i_sla_date_b])
+            i_sla_date_b += 1
 
+
+    if type_zno == 2:
+        zno_closed = 1
+    else:
+        zno_closed = 0
+    for i in range(len(el_contract)):
         try:
-            a_dt = datetime.datetime.strptime(y, '%H:%M:%S %d.%m.%Y')
-            print(a_dt)
+            a_dt = datetime.datetime.strptime(el_sla_date[i].text[10:], '%H:%M:%S %d.%m.%Y')
             b_dt = datetime.datetime.strptime(str(datetime.datetime.now(tz_yek))[:-13], '%Y-%m-%d %H:%M:%S')
-            print(b_dt)
+
             delta = a_dt - b_dt
             if str(delta)[0] == '-':
                 expired = 1
@@ -113,18 +62,22 @@ get_data(driver)
                 expired = 0
         except ValueError:
             expired = 0
+        add_zno(el_contract[i].text, el_sla_date[i].text[10:], zno_closed, expired)
 
-        add_zno(x, i, z, y, 0, expired)
-"""
+'''Получаем и добавляем в базу необработанные ЗНО'''
+driver.get('https://sd.atm72.ru/?filtr_department_atm_id=67680525&filtr_wf_current_contract=-1')
+get_data(driver, 0)
 
+'''Получаем и добавляем в базу назначеные ЗНО'''
+driver.get('https://sd.atm72.ru/?state=in_progress&filtr_notModernization=true')
+get_data(driver, 1)
 
-
-
-
-
-
-
-
+'''Получаем и добавляем в базу закрытые ЗНО'''
+driver.get('https://sd.atm72.ru/?state=closed&filtr_notModernization=false')
+el_start_date = driver.find_element(By.XPATH, '//input[@cid="date_from"]')
+el_start_date.send_keys(datetime.date.today().strftime('%d.%m.%Y'))
+sleep(25)
+get_data(driver, 2)
 
 
 sleep(2)

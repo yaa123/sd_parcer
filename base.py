@@ -3,9 +3,7 @@ from peewee import *
 db = SqliteDatabase('d_base.db')
 
 class ZNO(Model):
-    number = CharField()
     project = CharField()
-    created_date = DateTimeField()
     sla_date = DateTimeField()
     closed = BooleanField()
     expired = BooleanField()
@@ -13,11 +11,9 @@ class ZNO(Model):
     class Meta:
         database = db
 
-def add_zno(number, project, created_date, sla_date, closed, expired):
+def add_zno(project, sla_date, closed, expired):
     zno = ZNO(
-        number = number,
         project = project,
-        created_date = created_date,
         sla_date = sla_date,
         closed = closed,
         expired = expired,
