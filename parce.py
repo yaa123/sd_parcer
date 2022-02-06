@@ -7,7 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-from base import add_zno, clear
+from base import add_zno, clear, add_data_to_report_form
 
 clear()
 tz_yek = pytz.timezone('Asia/Yekaterinburg')
@@ -15,7 +15,9 @@ tz_yek = pytz.timezone('Asia/Yekaterinburg')
 login = os.environ.get('LOGIN')
 password = os.environ.get('PASSWORD')
 
-driver = webdriver.Chrome()
+options = webdriver.ChromeOptions()
+options.add_argument('--headless')
+driver = webdriver.Chrome(options=options)
 
 driver.get('https://sd.atm72.ru/')
 
@@ -81,7 +83,7 @@ def get_data(driver, type_zno):
                 expired = 0
         except ValueError:
             expired = 0
-        add_zno(el_contract[i].text, el_sla_date[i].text[10:], el_date_of_receipt[i], zno_closed, expired)
+        add_zno(el_contract[i].text, datetime.datetime.strptime(el_sla_date[i].text[10:], '%H:%M:%S %d.%m.%Y'), datetime.datetime.strptime(el_date_of_receipt[i], '%H:%M:%S %d.%m.%Y'), zno_closed, expired)
 
 '''Получаем и добавляем в базу необработанные ЗНО'''
 driver.get('https://sd.atm72.ru/?filtr_department_atm_id=67680525&filtr_wf_current_contract=-1')
@@ -95,9 +97,10 @@ get_data(driver, 1)
 driver.get('https://sd.atm72.ru/?state=closed&filtr_notModernization=false')
 el_start_date = driver.find_element(By.XPATH, '//input[@cid="date_from"]')
 el_start_date.send_keys(datetime.date.today().strftime('%d.%m.%Y'))
-sleep(25)
+sleep(15)
 get_data(driver, 2)
 
 
-sleep(2)
+add_data_to_report_form()
+
 driver.close()
