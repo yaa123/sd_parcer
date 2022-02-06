@@ -1,22 +1,35 @@
+from base import *
+from prettytable import PrettyTable
 import datetime
-import pytz
 
-tz_yek = pytz.timezone('Asia/Yekaterinburg')
+date_now = datetime.datetime.now().strftime('%m.%d.%y')
 
-a = '14:12:48 30.12.2021'
-b = '14:13:48 30.12.2021'
+mytable = PrettyTable()
+mytable.field_names = ['', 'Челябинская обл.', date_now]
 
-try:
-    a_dt = datetime.datetime.strptime(a, '%H:%M:%S %d.%m.%Y')
-    b_dt = datetime.datetime.strptime(str(datetime.datetime.now(tz_yek))[:-13], '%Y-%m-%d %H:%M:%S')
-    delta = a_dt - b_dt
-    if str(delta)[0] == '-':
-        expired = 1
+all = ZNO.select()
+
+project = set()
+
+for i_project in all:
+    project.add(i_project.project)
+
+
+project = list(project)
+
+x, y, z = [], [], []
+
+for i in project:
+    x.append(i)
+    zno = ZNO.select().where(ZNO.project == i)
+    y.append(len(zno))
+    expired = ZNO.select().where(ZNO.project == i, ZNO.expired == 1)
+    if expired:
+        z.append(len(expired))
     else:
-        expired = 0
-except ValueError:
-    expired = '0'
+        z.append(0)
 
-print(delta)
+for i in range(len(x)):
+    mytable.add_row([x[i], y[i], z[i]])
 
-print(datetime.date.today().strftime('%d.%m.%Y'))
+print(mytable)

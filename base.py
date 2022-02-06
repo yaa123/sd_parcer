@@ -5,16 +5,18 @@ db = SqliteDatabase('d_base.db')
 class ZNO(Model):
     project = CharField()
     sla_date = DateTimeField()
+    receipt_date = DateTimeField()
     closed = BooleanField()
     expired = BooleanField()
 
     class Meta:
         database = db
 
-def add_zno(project, sla_date, closed, expired):
+def add_zno(project, sla_date, receipt_date, closed, expired):
     zno = ZNO(
         project = project,
         sla_date = sla_date,
+        receipt_date = receipt_date,
         closed = closed,
         expired = expired,
     )
@@ -23,6 +25,7 @@ def add_zno(project, sla_date, closed, expired):
 def clear():
     x = ZNO.delete()
     x.execute()
+
 
 
 if __name__ == '__main__':

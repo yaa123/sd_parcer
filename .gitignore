@@ -2,3 +2,4 @@
 /aaa.py
 /d_dase.db
 .gitignore
+/__pycache__/
